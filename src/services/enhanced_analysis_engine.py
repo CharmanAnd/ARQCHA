@@ -684,7 +684,7 @@ CRÍTICO: Use APENAS dados REAIS da pesquisa fornecida. NUNCA invente ou simule 
                 "available_systems": {
                     "ai_providers": ai_manager.get_provider_status(),
                     "search_providers": search_manager.get_provider_status()
-                }
+            },
             "recommendation": "Execute nova análise com configuração completa"
         }
         
