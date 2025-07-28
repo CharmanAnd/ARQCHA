@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import traceback
 
 # Carrega variáveis de ambiente
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env'))
 
 # Configuração de logging
 logging.basicConfig(
