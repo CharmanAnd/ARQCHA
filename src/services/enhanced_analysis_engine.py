@@ -64,7 +64,7 @@ class EnhancedAnalysisEngine:
                 "analysis_engine": "ARQV30 Enhanced v2.0",
                 "analysis_engine": "Emergency Fallback v2.0",
                 "generated_at": datetime.utcnow().isoformat(),
-                "quality_score": self._calculate_quality_score(final_analysis),
+                "quality_score": self._calculate_quality_score(final_analysis) if final_analysis else 0.0,
                 "data_sources_used": len(research_data.get("sources", [])),
                 "ai_models_used": 1 if self.systems_enabled['gemini'] else 0
             }
@@ -680,10 +680,10 @@ CRÍTICO: Use APENAS dados REAIS da pesquisa fornecida. NUNCA invente ou simule 
             "analysis_engine": "Emergency Fallback",
             "generated_at": datetime.utcnow().isoformat(),
             "quality_score": 25.0,
-                "recommendation": "Configure pelo menos uma API de IA para análise completa",
-                "available_systems": {
-                    "ai_providers": ai_manager.get_provider_status(),
-                    "search_providers": search_manager.get_provider_status()
+            "recommendation": "Configure pelo menos uma API de IA para análise completa",
+            "available_systems": {
+                "ai_providers": ai_manager.get_provider_status(),
+                "search_providers": search_manager.get_provider_status()
             },
             "recommendation": "Execute nova análise com configuração completa"
         }
