@@ -273,19 +273,39 @@ class ARQV30App {
             return '<div class="error-message">Erro: Dados de análise inválidos</div>';
         }
         
+        // Seção de status dos sistemas
+        if (result.sistemas_utilizados) {
+            html += this.buildSystemsStatusSection(result.sistemas_utilizados);
+        }
+        
         // Avatar section
         if (result.avatar_ultra_detalhado) {
             html += this.buildAvatarSection(result.avatar_ultra_detalhado);
         }
         
         // Positioning section
-        if (result.escopo) {
-            html += this.buildPositioningSection(result.escopo);
+        if (result.escopo_posicionamento) {
+            html += this.buildPositioningSection(result.escopo_posicionamento);
+        }
+        
+        // Competition section
+        if (result.analise_concorrencia_profunda) {
+            html += this.buildCompetitionSection(result.analise_concorrencia_profunda);
         }
         
         // Marketing section
         if (result.estrategia_palavras_chave) {
             html += this.buildMarketingSection(result.estrategia_palavras_chave);
+        }
+        
+        // Metrics section
+        if (result.metricas_performance_detalhadas) {
+            html += this.buildMetricsSection(result.metricas_performance_detalhadas);
+        }
+        
+        // Action plan section
+        if (result.plano_acao_detalhado) {
+            html += this.buildActionPlanSection(result.plano_acao_detalhado);
         }
         
         // Insights section
@@ -294,16 +314,224 @@ class ARQV30App {
             html += this.buildInsightsSection(insights);
         }
         
+        // Dados de pesquisa real
+        if (result.dados_pesquisa_real || result.conteudo_extraido_real) {
+            html += this.buildResearchDataSection(result);
+        }
+        
         // Raw response section (for debugging)
         if (result.raw_response) {
-            html += this.buildRawResponseSection(result.raw_response);
+            html += this.buildRawResponseSection(result.raw_response || result.raw_ai_response);
         }
         
         // Metadata section
-        if (result.metadata_gemini || result.metadata_ultra_detalhado) {
-            const metadata = result.metadata_gemini || result.metadata_ultra_detalhado || {};
+        if (result.metadata || result.metadata_ai || result.metadata_gemini) {
+            const metadata = result.metadata || result.metadata_ai || result.metadata_gemini || {};
             html += this.buildMetadataSection(metadata);
         }
+        
+        return html;
+    }
+    
+    buildSystemsStatusSection(systems) {
+        let html = `
+            <div class="result-section">
+                <div class="result-section-header">
+                    <i class="fas fa-cogs"></i>
+                    <h4>Status dos Sistemas Utilizados</h4>
+                </div>
+                <div class="result-section-content">
+        `;
+        
+        // Status dos provedores de IA
+        if (systems.ai_providers) {
+            html += `
+                <div class="expandable-section">
+                    <div class="expandable-header">
+                        <div class="expandable-title">
+                            <i class="fas fa-brain"></i>
+                            Provedores de IA
+                        </div>
+                        <i class="fas fa-chevron-down expandable-icon"></i>
+                    </div>
+                    <div class="expandable-content">
+                        <div class="providers-grid">
+            `;
+            
+            Object.entries(systems.ai_providers).forEach(([name, status]) => {
+                const statusIcon = status.available ? '✅' : '❌';
+                const statusText = status.available ? 'Disponível' : 'Indisponível';
+                const errorInfo = status.error_count > 0 ? ` (${status.error_count} erros)` : '';
+                
+                html += `
+                    <div class="provider-card">
+                        <h5>${statusIcon} ${name.toUpperCase()}</h5>
+                        <p><strong>Status:</strong> ${statusText}${errorInfo}</p>
+                        <p><strong>Prioridade:</strong> ${status.priority}</p>
+                        ${status.current_model ? `<p><strong>Modelo:</strong> ${status.current_model}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Status dos provedores de busca
+        if (systems.search_providers) {
+            html += `
+                <div class="expandable-section">
+                    <div class="expandable-header">
+                        <div class="expandable-title">
+                            <i class="fas fa-search"></i>
+                            Provedores de Busca
+                        </div>
+                        <i class="fas fa-chevron-down expandable-icon"></i>
+                    </div>
+                    <div class="expandable-content">
+                        <div class="providers-grid">
+            `;
+            
+            Object.entries(systems.search_providers).forEach(([name, status]) => {
+                const statusIcon = status.available ? '✅' : '❌';
+                const statusText = status.available ? 'Disponível' : 'Indisponível';
+                const errorInfo = status.error_count > 0 ? ` (${status.error_count} erros)` : '';
+                
+                html += `
+                    <div class="provider-card">
+                        <h5>${statusIcon} ${name.toUpperCase()}</h5>
+                        <p><strong>Status:</strong> ${statusText}${errorInfo}</p>
+                        <p><strong>Prioridade:</strong> ${status.priority}</p>
+                    </div>
+                `;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Resumo da qualidade
+        html += `
+            <div class="quality-summary">
+                <h5>📊 Resumo da Análise</h5>
+                <div class="quality-metrics">
+                    <div class="metric">
+                        <span class="label">Fontes Consultadas:</span>
+                        <span class="value">${systems.total_sources || 0}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Qualidade dos Dados:</span>
+                        <span class="value">${systems.analysis_quality || 'N/A'}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Extração de Conteúdo:</span>
+                        <span class="value">${systems.content_extraction ? '✅ Ativa' : '❌ Inativa'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        return html;
+    }
+    
+    buildResearchDataSection(result) {
+        let html = `
+            <div class="result-section">
+                <div class="result-section-header">
+                    <i class="fas fa-database"></i>
+                    <h4>Dados de Pesquisa Real</h4>
+                </div>
+                <div class="result-section-content">
+        `;
+        
+        // Dados de pesquisa
+        if (result.dados_pesquisa_real) {
+            const data = result.dados_pesquisa_real;
+            html += `
+                <div class="expandable-section expanded">
+                    <div class="expandable-header">
+                        <div class="expandable-title">
+                            <i class="fas fa-search"></i>
+                            Resultados de Busca (${data.total_resultados} encontrados)
+                        </div>
+                        <i class="fas fa-chevron-down expandable-icon"></i>
+                    </div>
+                    <div class="expandable-content">
+                        <div class="search-stats">
+                            <div class="stat">
+                                <strong>Fontes Únicas:</strong> ${data.fontes_unicas}
+                            </div>
+                            <div class="stat">
+                                <strong>Provedores:</strong> ${data.provedores_utilizados.join(', ')}
+                            </div>
+                        </div>
+                        
+                        <div class="search-results-list">
+                            ${data.resultados_detalhados.slice(0, 10).map((result, index) => `
+                                <div class="search-result-item">
+                                    <h6>${index + 1}. ${result.title}</h6>
+                                    <p class="result-url">${result.url}</p>
+                                    <p class="result-snippet">${result.snippet}</p>
+                                    <span class="result-source">Fonte: ${result.source}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Conteúdo extraído
+        if (result.conteudo_extraido_real) {
+            const content = result.conteudo_extraido_real;
+            html += `
+                <div class="expandable-section">
+                    <div class="expandable-header">
+                        <div class="expandable-title">
+                            <i class="fas fa-file-text"></i>
+                            Conteúdo Extraído (${content.total_paginas} páginas)
+                        </div>
+                        <i class="fas fa-chevron-down expandable-icon"></i>
+                    </div>
+                    <div class="expandable-content">
+                        <div class="content-stats">
+                            <div class="stat">
+                                <strong>Total de Caracteres:</strong> ${content.total_caracteres.toLocaleString()}
+                            </div>
+                        </div>
+                        
+                        <div class="extracted-pages-list">
+                            ${content.paginas_processadas.slice(0, 8).map((page, index) => `
+                                <div class="extracted-page-item">
+                                    <h6>${index + 1}. ${page.titulo}</h6>
+                                    <p class="page-url">${page.url}</p>
+                                    <div class="page-stats">
+                                        <span>Conteúdo: ${page.tamanho_conteudo.toLocaleString()} chars</span>
+                                        <span>Fonte: ${page.fonte}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
         
         return html;
     }
@@ -429,7 +657,7 @@ class ARQV30App {
         return html;
     }
     
-    buildPositioningSection(escopo) {
+    buildPositioningSection(positioning) {
         return `
             <div class="result-section">
                 <div class="result-section-header">
@@ -437,7 +665,7 @@ class ARQV30App {
                     <h4>Escopo e Posicionamento</h4>
                 </div>
                 <div class="result-section-content">
-                    ${escopo.posicionamento_mercado ? `
+                    ${positioning.posicionamento_mercado ? `
                         <div class="expandable-section expanded">
                             <div class="expandable-header">
                                 <div class="expandable-title">
@@ -447,12 +675,12 @@ class ARQV30App {
                                 <i class="fas fa-chevron-down expandable-icon"></i>
                             </div>
                             <div class="expandable-content">
-                                <p>${escopo.posicionamento_mercado}</p>
+                                <p>${positioning.posicionamento_mercado}</p>
                             </div>
                         </div>
                     ` : ''}
                     
-                    ${escopo.proposta_valor ? `
+                    ${positioning.proposta_valor_unica ? `
                         <div class="expandable-section">
                             <div class="expandable-header">
                                 <div class="expandable-title">
@@ -462,12 +690,12 @@ class ARQV30App {
                                 <i class="fas fa-chevron-down expandable-icon"></i>
                             </div>
                             <div class="expandable-content">
-                                <p>${escopo.proposta_valor}</p>
+                                <p>${positioning.proposta_valor_unica}</p>
                             </div>
                         </div>
                     ` : ''}
                     
-                    ${escopo.diferenciais_competitivos && escopo.diferenciais_competitivos.length > 0 ? `
+                    ${positioning.diferenciais_competitivos && positioning.diferenciais_competitivos.length > 0 ? `
                         <div class="expandable-section">
                             <div class="expandable-header">
                                 <div class="expandable-title">
@@ -478,7 +706,7 @@ class ARQV30App {
                             </div>
                             <div class="expandable-content">
                                 <ul class="feature-list">
-                                    ${escopo.diferenciais_competitivos.map(diferencial => `
+                                    ${positioning.diferenciais_competitivos.map(diferencial => `
                                         <li class="feature-item">
                                             <i class="fas fa-check-circle"></i>
                                             <span class="feature-text">${diferencial}</span>
@@ -488,6 +716,87 @@ class ARQV30App {
                             </div>
                         </div>
                     ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    buildCompetitionSection(competition) {
+        if (!competition || !Array.isArray(competition)) return '';
+        
+        return `
+            <div class="result-section">
+                <div class="result-section-header">
+                    <i class="fas fa-chess"></i>
+                    <h4>Análise de Concorrência Profunda</h4>
+                </div>
+                <div class="result-section-content">
+                    ${competition.map((competitor, index) => `
+                        <div class="expandable-section ${index === 0 ? 'expanded' : ''}">
+                            <div class="expandable-header">
+                                <div class="expandable-title">
+                                    <i class="fas fa-building"></i>
+                                    ${competitor.nome || `Concorrente ${index + 1}`}
+                                </div>
+                                <i class="fas fa-chevron-down expandable-icon"></i>
+                            </div>
+                            <div class="expandable-content">
+                                ${competitor.analise_swot ? `
+                                    <div class="swot-analysis">
+                                        <div class="swot-grid">
+                                            <div class="swot-item strengths">
+                                                <h6>💪 Forças</h6>
+                                                <ul>
+                                                    ${competitor.analise_swot.forcas?.map(f => `<li>${f}</li>`).join('') || '<li>Não informado</li>'}
+                                                </ul>
+                                            </div>
+                                            <div class="swot-item weaknesses">
+                                                <h6>⚠️ Fraquezas</h6>
+                                                <ul>
+                                                    ${competitor.analise_swot.fraquezas?.map(f => `<li>${f}</li>`).join('') || '<li>Não informado</li>'}
+                                                </ul>
+                                            </div>
+                                            <div class="swot-item opportunities">
+                                                <h6>🎯 Oportunidades</h6>
+                                                <ul>
+                                                    ${competitor.analise_swot.oportunidades?.map(o => `<li>${o}</li>`).join('') || '<li>Não informado</li>'}
+                                                </ul>
+                                            </div>
+                                            <div class="swot-item threats">
+                                                <h6>🚨 Ameaças</h6>
+                                                <ul>
+                                                    ${competitor.analise_swot.ameacas?.map(a => `<li>${a}</li>`).join('') || '<li>Não informado</li>'}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                ${competitor.estrategia_marketing ? `
+                                    <div class="competitor-info">
+                                        <h6>📈 Estratégia de Marketing</h6>
+                                        <p>${competitor.estrategia_marketing}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${competitor.posicionamento ? `
+                                    <div class="competitor-info">
+                                        <h6>🎯 Posicionamento</h6>
+                                        <p>${competitor.posicionamento}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${competitor.vulnerabilidades && competitor.vulnerabilidades.length > 0 ? `
+                                    <div class="competitor-info">
+                                        <h6>🎯 Vulnerabilidades Exploráveis</h6>
+                                        <ul>
+                                            ${competitor.vulnerabilidades.map(v => `<li>${v}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
@@ -514,16 +823,111 @@ class ARQV30App {
         `;
     }
     
-    buildCompetitionSection(competition) {
-        // Simplified competition section
+    buildMetricsSection(metrics) {
         return `
             <div class="result-section">
                 <div class="result-section-header">
-                    <i class="fas fa-chess"></i>
-                    <h4>Análise de Concorrência</h4>
+                    <i class="fas fa-chart-line"></i>
+                    <h4>Métricas de Performance</h4>
                 </div>
                 <div class="result-section-content">
-                    <p>Análise detalhada da concorrência disponível no relatório PDF.</p>
+                    ${metrics.kpis_principais ? `
+                        <div class="expandable-section expanded">
+                            <div class="expandable-header">
+                                <div class="expandable-title">
+                                    <i class="fas fa-target"></i>
+                                    KPIs Principais
+                                </div>
+                                <i class="fas fa-chevron-down expandable-icon"></i>
+                            </div>
+                            <div class="expandable-content">
+                                <div class="kpis-grid">
+                                    ${metrics.kpis_principais.map(kpi => `
+                                        <div class="kpi-card">
+                                            <h6>${kpi.metrica || 'KPI'}</h6>
+                                            <div class="kpi-value">${kpi.objetivo || 'N/A'}</div>
+                                            ${kpi.frequencia ? `<div class="kpi-frequency">${kpi.frequencia}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${metrics.projecoes_financeiras ? `
+                        <div class="expandable-section">
+                            <div class="expandable-header">
+                                <div class="expandable-title">
+                                    <i class="fas fa-chart-bar"></i>
+                                    Projeções Financeiras
+                                </div>
+                                <i class="fas fa-chevron-down expandable-icon"></i>
+                            </div>
+                            <div class="expandable-content">
+                                ${this.renderFinancialProjections(metrics.projecoes_financeiras)}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    buildActionPlanSection(actionPlan) {
+        const phases = ['fase_1_preparacao', 'fase_2_lancamento', 'fase_3_crescimento'];
+        const phaseNames = {
+            'fase_1_preparacao': '📅 Fase 1: Preparação',
+            'fase_2_lancamento': '📅 Fase 2: Lançamento',
+            'fase_3_crescimento': '📅 Fase 3: Crescimento'
+        };
+        
+        return `
+            <div class="result-section">
+                <div class="result-section-header">
+                    <i class="fas fa-tasks"></i>
+                    <h4>Plano de Ação Detalhado</h4>
+                </div>
+                <div class="result-section-content">
+                    ${phases.map((phase, index) => {
+                        const phaseData = actionPlan[phase];
+                        if (!phaseData) return '';
+                        
+                        return `
+                            <div class="expandable-section ${index === 0 ? 'expanded' : ''}">
+                                <div class="expandable-header">
+                                    <div class="expandable-title">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        ${phaseNames[phase]}
+                                    </div>
+                                    <i class="fas fa-chevron-down expandable-icon"></i>
+                                </div>
+                                <div class="expandable-content">
+                                    <div class="phase-info">
+                                        ${phaseData.duracao ? `<p><strong>Duração:</strong> ${phaseData.duracao}</p>` : ''}
+                                        ${phaseData.investimento ? `<p><strong>Investimento:</strong> ${phaseData.investimento}</p>` : ''}
+                                    </div>
+                                    
+                                    ${phaseData.atividades && phaseData.atividades.length > 0 ? `
+                                        <div class="phase-activities">
+                                            <h6>📋 Atividades</h6>
+                                            <ul>
+                                                ${phaseData.atividades.map(atividade => `<li>${atividade}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${phaseData.entregas && phaseData.entregas.length > 0 ? `
+                                        <div class="phase-deliverables">
+                                            <h6>📦 Entregas</h6>
+                                            <ul>
+                                                ${phaseData.entregas.map(entrega => `<li>${entrega}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -589,48 +993,6 @@ class ARQV30App {
         return html;
     }
     
-    buildMetricsSection(metrics) {
-        return `
-            <div class="result-section">
-                <div class="result-section-header">
-                    <i class="fas fa-chart-line"></i>
-                    <h4>Métricas de Performance</h4>
-                </div>
-                <div class="result-section-content">
-                    <p>Métricas detalhadas e KPIs disponíveis no relatório PDF completo.</p>
-                </div>
-            </div>
-        `;
-    }
-    
-    buildProjectionsSection(projections) {
-        return `
-            <div class="result-section">
-                <div class="result-section-header">
-                    <i class="fas fa-chart-bar"></i>
-                    <h4>Projeções e Cenários</h4>
-                </div>
-                <div class="result-section-content">
-                    <p>Projeções financeiras detalhadas disponíveis no relatório PDF.</p>
-                </div>
-            </div>
-        `;
-    }
-    
-    buildActionPlanSection(actionPlan) {
-        return `
-            <div class="result-section">
-                <div class="result-section-header">
-                    <i class="fas fa-tasks"></i>
-                    <h4>Plano de Ação</h4>
-                </div>
-                <div class="result-section-content">
-                    <p>Plano de ação detalhado com cronograma disponível no relatório PDF.</p>
-                </div>
-            </div>
-        `;
-    }
-    
     initializeResultComponents() {
         // Re-initialize expandable sections for results
         this.initializeExpandableSections();
@@ -672,7 +1034,7 @@ class ARQV30App {
                     <div class="metadata-grid">
                         <div class="metadata-item">
                             <span class="metadata-label">Modelo IA:</span>
-                            <span class="metadata-value">${metadata.model || 'Gemini Pro'}</span>
+                            <span class="metadata-value">${metadata.model || metadata.provider_used || 'AI Manager'}</span>
                         </div>
                         <div class="metadata-item">
                             <span class="metadata-label">Versão:</span>
@@ -682,10 +1044,22 @@ class ARQV30App {
                             <span class="metadata-label">Gerado em:</span>
                             <span class="metadata-value">${new Date(metadata.generated_at || Date.now()).toLocaleString('pt-BR')}</span>
                         </div>
+                        ${metadata.processing_time_formatted ? `
+                            <div class="metadata-item">
+                                <span class="metadata-label">Tempo de Processamento:</span>
+                                <span class="metadata-value">${metadata.processing_time_formatted}</span>
+                            </div>
+                        ` : ''}
                         ${metadata.quality_score ? `
                             <div class="metadata-item">
                                 <span class="metadata-label">Score de Qualidade:</span>
                                 <span class="metadata-value">${metadata.quality_score}%</span>
+                            </div>
+                        ` : ''}
+                        ${metadata.data_sources_used ? `
+                            <div class="metadata-item">
+                                <span class="metadata-label">Fontes Consultadas:</span>
+                                <span class="metadata-value">${metadata.data_sources_used}</span>
                             </div>
                         ` : ''}
                     </div>
@@ -712,6 +1086,56 @@ class ARQV30App {
         };
         
         return labels[key] || key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    renderFinancialProjections(projections) {
+        const scenarios = ['cenario_conservador', 'cenario_realista', 'cenario_otimista'];
+        const scenarioNames = {
+            'cenario_conservador': '🛡️ Conservador',
+            'cenario_realista': '🎯 Realista',
+            'cenario_otimista': '🚀 Otimista'
+        };
+        
+        return `
+            <div class="projections-grid">
+                ${scenarios.map(scenario => {
+                    const data = projections[scenario];
+                    if (!data) return '';
+                    
+                    return `
+                        <div class="projection-card">
+                            <h5>${scenarioNames[scenario]}</h5>
+                            <div class="projection-data">
+                                ${data.receita_mensal ? `
+                                    <div class="projection-item">
+                                        <span class="label">Receita Mensal:</span>
+                                        <span class="value">${data.receita_mensal}</span>
+                                    </div>
+                                ` : ''}
+                                ${data.clientes_mes ? `
+                                    <div class="projection-item">
+                                        <span class="label">Clientes/Mês:</span>
+                                        <span class="value">${data.clientes_mes}</span>
+                                    </div>
+                                ` : ''}
+                                ${data.ticket_medio ? `
+                                    <div class="projection-item">
+                                        <span class="label">Ticket Médio:</span>
+                                        <span class="value">${data.ticket_medio}</span>
+                                    </div>
+                                ` : ''}
+                                ${data.margem_lucro ? `
+                                    <div class="projection-item">
+                                        <span class="label">Margem de Lucro:</span>
+                                        <span class="value">${data.margem_lucro}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
     }
     
     async downloadPDF() {
